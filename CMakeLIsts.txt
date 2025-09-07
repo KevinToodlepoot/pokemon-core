@@ -1,0 +1,46 @@
+cmake_minimum_required(VERSION 3.16)
+project(PokemonCore VERSION 0.1.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Build options
+option(BUILD_TESTS "Build tests" ON)
+
+file(GLOB_RECURSE POKEMON_CORE_SOURCES 
+    "src/*.cpp"
+    "src/*.hpp"
+)
+
+add_library(pokemon-core STATIC ${POKEMON_CORE_SOURCES})
+
+target_include_directories(pokemon-core PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    $<INSTALL_INTERFACE:src>
+)
+
+if(BUILD_TESTS)
+    find_package(GTest REQUIRED)
+    file(GLOB TEST_SOURCES "tests/*.cpp")
+    add_executable(pokemon-core-tests ${TEST_SOURCES})
+    target_link_libraries(pokemon-core-tests
+        pokemon-core
+        GTest::gtest
+        GTest::gtest_main
+    )
+    enable_testing()
+    add_test(NAME pokemon-core-tests COMMAND pokemon-core-tests)
+endif()
+
+# Custom target to generate data files
+add_custom_target(generate-data
+    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/data/generate_data.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Generating data files..."
+)
+
+# Print what files were found (helpful for debugging)
+message(STATUS "Found ${CMAKE_PROJECT_NAME} source files:")
+foreach(SOURCE_FILE ${POKEMON_CORE_SOURCES})
+    message(STATUS "  ${SOURCE_FILE}")
+endforeach()
